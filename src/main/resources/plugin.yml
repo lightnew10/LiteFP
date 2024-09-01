@@ -1,0 +1,9 @@
+name: LiteFP
+version: '${project.version}'
+main: fr.lightnew.npc.LiteFP
+database: true
+website: https://github.com/lightnew10
+api-version: '1.20'
+authors: [lightnew]
+commands:
+  npc:
