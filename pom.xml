@@ -6,7 +6,7 @@
 
   <groupId>fr.lightnew</groupId>
   <artifactId>LiteFP</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>LiteFP</name>
@@ -15,6 +15,13 @@
     <java.version>17</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+  <distributionManagement>
+      <repository>
+          <id>github</id>
+          <name>GitHub lightnew10 Apache Maven Packages</name>
+          <url>https://maven.pkg.github.com/lightnew10/LiteFP</url>
+      </repository>
+  </distributionManagement>
 
   <build>
     <plugins>
