@@ -120,7 +120,7 @@ public class PlayerManager implements Listener {
         }
     }
 
-    @EventHandler
+    /*@EventHandler
     public void interactNPC(InteractNPCEvent event) {
         event.getPlayer().sendMessage("ID NPC -> " + event.getNpcManager().getId() + ", Click -> " + event.getClickType());
         MetadataNPC metadataNPC = event.getNpcManager().getMetadataNPC();
@@ -135,7 +135,7 @@ public class PlayerManager implements Listener {
         }
         event.getNpcManager().changeMetadata(event.getPlayer(), metadataNPC);
         event.getNpcManager().playAnimation(event.getPlayer(), AnimationNPC.SWING_MAIN_HAND);
-        /*event.getNpcManager().moveNaturally(new Location(Bukkit.getWorld("world"), 25.52, 96, 31.71),
-                new Location(Bukkit.getWorld("world"), 25.59, 96, 21.30), 0.1);*/
-    }
+        event.getNpcManager().moveNaturally(new Location(Bukkit.getWorld("world"), 25.52, 96, 31.71),
+                new Location(Bukkit.getWorld("world"), 25.59, 96, 21.30), 0.1);
+    }*/
 }

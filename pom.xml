@@ -53,6 +53,9 @@
       <resource>
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
+        <excludes>
+            <exclude>**/*.jar</exclude>
+        </excludes>
       </resource>
     </resources>
   </build>
@@ -130,8 +133,10 @@
           <groupId>org.bukkit</groupId>
           <artifactId>craftbukkit</artifactId>
           <version>1.20.1-R0.1-SNAPSHOT</version>
-          <scope>provided</scope>
+          <scope>system</scope>
+          <systemPath>${project.basedir}/src/main/resources/craftbukkit-1.20.1-R0.1-SNAPSHOT.jar</systemPath>
       </dependency>
+
 
       <dependency>
           <groupId>org.jetbrains</groupId>
