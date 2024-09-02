@@ -15,13 +15,6 @@
     <java.version>17</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
-  <distributionManagement>
-      <repository>
-          <id>github</id>
-          <name>GitHub lightnew10 Apache Maven Packages</name>
-          <url>https://maven.pkg.github.com/lightnew10/LiteFP</url>
-      </repository>
-  </distributionManagement>
 
   <build>
     <plugins>
