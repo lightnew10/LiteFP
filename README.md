@@ -4,23 +4,6 @@ Minecraft version : `1.20.1`
 
 By `[Lightnew]`
 
-# Maven
-### Repository
-```xml
-<repository>
-    <id>jitpack.io</id>
-    <url>https://jitpack.io</url>
-</repository>
-```
-### Dependency
-```xml
-<dependency>
-    <groupId>com.github.lightnew10</groupId>
-    <artifactId>litefp</artifactId>
-    <version>0.1</version>
-</dependency>
-```
-
 ## How to Interact with NPC ?
 
 ```java
