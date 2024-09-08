@@ -2,40 +2,43 @@ package fr.lightnew.npc.events;
 
 import fr.lightnew.npc.LiteFP;
 import fr.lightnew.npc.commands.CommandNPC;
-import fr.lightnew.npc.entities.AnimationNPC;
-import fr.lightnew.npc.entities.MetadataNPC;
-import fr.lightnew.npc.entities.NPCCreator;
-import fr.lightnew.npc.entities.PoseNPC;
+import fr.lightnew.npc.commands.RecordCommand;
+import fr.lightnew.npc.entities.npc.MetadataNPC;
+import fr.lightnew.npc.entities.npc.NPCCreator;
 import fr.lightnew.npc.events.builder.InteractNPCEvent;
 import fr.lightnew.npc.events.builder.PacketReader;
 import fr.lightnew.npc.gui.GUINpcs;
-import net.minecraft.network.protocol.game.PacketPlayOutEntity;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityHeadRotation;
-import net.minecraft.server.network.PlayerConnection;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import fr.lightnew.npc.tools.PlayerUtils;
+import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
+import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
+import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
+import net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Pose;
+import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerPortalEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class PlayerManager implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        LiteFP.list_npc.values().forEach(npcCreator -> LiteFP.workerLoadNPC.put(event.getPlayer(), npcCreator));
+        LiteFP.list_npc.values().forEach(npcCreator -> {
+            CompletableFuture<Void> f = new CompletableFuture<>();
+            f.completeOnTimeout(null, 3, TimeUnit.SECONDS).thenRunAsync(() -> LiteFP.workerLoadNPC.put(event.getPlayer(), npcCreator));
+        });
         PacketReader reader = new PacketReader();
         reader.inject(event.getPlayer());
     }
@@ -45,7 +48,7 @@ public class PlayerManager implements Listener {
         PacketReader reader = new PacketReader();
         reader.uninject(event.getPlayer());
     }
-
+    
     @EventHandler
     public void portal(PlayerPortalEvent event) {
         List<NPCCreator> list = LiteFP.list_npc.values().stream().filter(npcCreator -> npcCreator.getLocation().getWorld().getName().equalsIgnoreCase(event.getTo().getWorld().getName())).collect(Collectors.toList());
@@ -59,16 +62,16 @@ public class PlayerManager implements Listener {
                     if (npc.getEffects().getLookLock())
                         return;
                     Location loc = npc.getLocation();
+                    if (loc.distance(event.getPlayer().getLocation()) > 10)
+                        return;
                     loc.setDirection(event.getPlayer().getLocation().subtract(loc).toVector());
-
                     float yaw = loc.getYaw();
                     float pitch = loc.getPitch();
-
-                    PlayerConnection connection = ((CraftPlayer) event.getPlayer()).getHandle().c;
-
-                    connection.a(new PacketPlayOutEntity.PacketPlayOutEntityLook(npc.getEntityPlayer().getBukkitEntity().getEntityId(), (byte) ((yaw%360.)*256/360), (byte) ((pitch%360.)*256/360), false));
-                    connection.a(new PacketPlayOutEntityHeadRotation(npc.getEntityPlayer(), (byte) ((yaw%360)*256/360)));
+                    ((CraftPlayer) event.getPlayer()).getHandle().connection.send(new ClientboundMoveEntityPacket.Rot(npc.getId(), (byte) ((yaw % 360) * 256 / 360), (byte) ((pitch % 360) * 256 / 360), true));
+                    ((CraftPlayer) event.getPlayer()).getHandle().connection.send(new ClientboundRotateHeadPacket(npc.getNPC(), (byte) ((yaw % 360) * 256 / 360)));
                 });
+        if (RecordCommand.inRecord.contains(event.getPlayer()))
+            RecordCommand.recordPlayers.get(event.getPlayer()).addLocation(event.getPlayer().getLocation());
     }
 
     @EventHandler
@@ -113,29 +116,33 @@ public class PlayerManager implements Listener {
             }
 
             if (meta.getDisplayName().equalsIgnoreCase(ChatColor.AQUA + "Teleport to NPC")) {
-                player.teleport(npcCreator.getEntityPlayer().getBukkitEntity());
+                player.teleport(npcCreator.getServerPlayer().getBukkitEntity());
                 player.sendMessage(ChatColor.GOLD + "Teleported to " + npcCreator.getName() + " (" + npcCreator.getId() +")");
             }
             event.setCancelled(true);
         }
     }
 
+    //TESTING EVENT
     /*@EventHandler
     public void interactNPC(InteractNPCEvent event) {
         event.getPlayer().sendMessage("ID NPC -> " + event.getNpcManager().getId() + ", Click -> " + event.getClickType());
+
         MetadataNPC metadataNPC = event.getNpcManager().getMetadataNPC();
-        if (metadataNPC.getPose() == null || metadataNPC.getPose().equals(PoseNPC.CROAKING)) {
-            metadataNPC.setHasGlowingEffect(false);
-            metadataNPC.setPose(PoseNPC.DYING);
+        if (metadataNPC.getPose() == null || metadataNPC.getPose().equals(Pose.SLEEPING)) {
+            metadataNPC.setHasGlowingEffect(true);
+            metadataNPC.setPose(Pose.CROUCHING);
             metadataNPC.setHasNoGravity(false);
         } else {
-            metadataNPC.setHasGlowingEffect(true);
-            metadataNPC.setPose(PoseNPC.CROAKING);
+            metadataNPC.setHasGlowingEffect(false);
+            metadataNPC.setPose(Pose.SLEEPING);
             metadataNPC.setHasNoGravity(false);
         }
         event.getNpcManager().changeMetadata(event.getPlayer(), metadataNPC);
-        event.getNpcManager().playAnimation(event.getPlayer(), AnimationNPC.SWING_MAIN_HAND);
+
+        PlayerUtils.changeCameraPlayer(event.getPlayer(), null, 0, null);
+        /*event.getNpcManager().playAnimation(event.getPlayer(), AnimationNPC.SWING_MAIN_HAND);
         event.getNpcManager().moveNaturally(new Location(Bukkit.getWorld("world"), 25.52, 96, 31.71),
-                new Location(Bukkit.getWorld("world"), 25.59, 96, 21.30), 0.1);
+                new Location(Bukkit.getWorld("world"), 25.59, 96, 21.30), 0.1);*/
     }*/
 }

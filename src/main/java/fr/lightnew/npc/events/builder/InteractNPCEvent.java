@@ -1,6 +1,6 @@
 package fr.lightnew.npc.events.builder;
 
-import fr.lightnew.npc.entities.NPCCreator;
+import fr.lightnew.npc.entities.npc.NPCCreator;
 import lombok.Getter;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;

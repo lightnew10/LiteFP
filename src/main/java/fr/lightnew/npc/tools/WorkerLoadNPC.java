@@ -1,6 +1,6 @@
 package fr.lightnew.npc.tools;
 
-import fr.lightnew.npc.entities.NPCCreator;
+import fr.lightnew.npc.entities.npc.NPCCreator;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 

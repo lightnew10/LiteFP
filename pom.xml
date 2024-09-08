@@ -6,7 +6,7 @@
 
   <groupId>fr.lightnew</groupId>
   <artifactId>LiteFP</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
   <packaging>jar</packaging>
 
   <name>LiteFP</name>
@@ -48,6 +48,39 @@
           </execution>
         </executions>
       </plugin>
+        <plugin>
+            <groupId>net.md-5</groupId>
+            <artifactId>specialsource-maven-plugin</artifactId>
+            <version>2.0.3</version>
+            <executions>
+                <execution>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>remap</goal>
+                    </goals>
+                    <id>remap-obf</id>
+                    <configuration>
+                        <srgIn>org.spigotmc:minecraft-server:1.20.1-R0.1-SNAPSHOT:txt:maps-mojang</srgIn>
+                        <reverse>true</reverse>
+                        <remappedDependencies>org.spigotmc:spigot:1.20.1-R0.1-SNAPSHOT:jar:remapped-mojang</remappedDependencies>
+                        <remappedArtifactAttached>true</remappedArtifactAttached>
+                        <remappedClassifierName>remapped-obf</remappedClassifierName>
+                    </configuration>
+                </execution>
+                <execution>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>remap</goal>
+                    </goals>
+                    <id>remap-spigot</id>
+                    <configuration>
+                        <inputFile>${project.build.directory}/${project.artifactId}-${project.version}-remapped-obf.jar</inputFile>
+                        <srgIn>org.spigotmc:minecraft-server:1.20.1-R0.1-SNAPSHOT:csrg:maps-spigot</srgIn>
+                        <remappedDependencies>org.spigotmc:spigot:1.20.1-R0.1-SNAPSHOT:jar:remapped-obf</remappedDependencies>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
     </plugins>
     <resources>
       <resource>
@@ -94,7 +127,14 @@
       </repository>
   </repositories>
 
+
   <dependencies>
+      <dependency>
+          <groupId>com.mojang</groupId>
+          <artifactId>brigadier</artifactId>
+          <version>1.2.9</version>
+          <scope>compile</scope>
+      </dependency>
       <dependency>
           <groupId>com.mojang</groupId>
           <artifactId>datafixerupper</artifactId>
@@ -113,11 +153,24 @@
           <version>4.1.68.Final</version>
       </dependency>
 
+      <dependency>
+          <groupId>com.comphenix.protocol</groupId>
+          <artifactId>ProtocolLib</artifactId>
+          <version>5.1.0</version>
+          <scope>provided</scope>
+      </dependency>
 
       <dependency>
           <groupId>org.spigotmc</groupId>
           <artifactId>spigot-api</artifactId>
           <version>1.20.1-R0.1-SNAPSHOT</version>
+          <scope>provided</scope>
+      </dependency>
+      <dependency>
+          <groupId>org.spigotmc</groupId>
+          <artifactId>spigot</artifactId>
+          <version>1.20.1-R0.1-SNAPSHOT</version>
+          <classifier>remapped-mojang</classifier>
           <scope>provided</scope>
       </dependency>
 
@@ -133,14 +186,6 @@
           <artifactId>authlib</artifactId>
           <version>6.0.54</version>
           <scope>compile</scope>
-      </dependency>
-
-      <dependency>
-          <groupId>org.bukkit</groupId>
-          <artifactId>craftbukkit</artifactId>
-          <version>1.20.1-R0.1-SNAPSHOT</version>
-          <scope>system</scope>
-          <systemPath>${project.basedir}/src/main/resources/craftbukkit-1.20.1-R0.1-SNAPSHOT.jar</systemPath>
       </dependency>
 
 

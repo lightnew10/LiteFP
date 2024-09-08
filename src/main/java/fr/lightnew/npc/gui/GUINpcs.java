@@ -2,7 +2,7 @@ package fr.lightnew.npc.gui;
 
 import fr.lightnew.npc.LiteFP;
 import fr.lightnew.npc.commands.CommandNPC;
-import fr.lightnew.npc.entities.NPCCreator;
+import fr.lightnew.npc.entities.npc.NPCCreator;
 import fr.lightnew.npc.tools.ItemBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;

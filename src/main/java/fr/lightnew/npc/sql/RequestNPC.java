@@ -2,11 +2,11 @@ package fr.lightnew.npc.sql;
 
 import com.mojang.datafixers.util.Pair;
 import fr.lightnew.npc.LiteFP;
-import fr.lightnew.npc.entities.EffectNPC;
-import fr.lightnew.npc.entities.NPCCreator;
+import fr.lightnew.npc.entities.npc.EffectNPC;
+import fr.lightnew.npc.entities.npc.NPCCreator;
 import fr.lightnew.npc.tools.ConsoleLog;
 import fr.lightnew.npc.tools.ItemBuilder;
-import net.minecraft.world.entity.EnumItemSlot;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -197,7 +197,7 @@ public class RequestNPC {
         return jsonObject;
     }
 
-    private static JSONObject pairsToJson(List<List<Pair<EnumItemSlot, ItemStack>>> stuff) {
+    private static JSONObject pairsToJson(List<List<Pair<EquipmentSlot, ItemStack>>> stuff) {
         JSONObject jsonObject = new JSONObject();
         for (int i = 0; i < stuff.size(); i++) {
             JSONObject json = new JSONObject();
@@ -220,11 +220,11 @@ public class RequestNPC {
         return jsonObject;
     }
 
-    private static List<List<Pair<EnumItemSlot, ItemStack>>> jsonToPairs(JSONObject jsonObject) {
-        List<List<Pair<EnumItemSlot, ItemStack>>> result = new ArrayList<>();
+    private static List<List<Pair<EquipmentSlot, ItemStack>>> jsonToPairs(JSONObject jsonObject) {
+        List<List<Pair<EquipmentSlot, ItemStack>>> result = new ArrayList<>();
         for (int i = 0; i < jsonObject.length(); i++) {
             JSONObject json = jsonObject.getJSONObject(String.valueOf(i));
-            EnumItemSlot slot = EnumItemSlot.valueOf(json.getString("first"));
+            EquipmentSlot slot = EquipmentSlot.valueOf(json.getString("first"));
             JSONObject itemJson = json.getJSONObject("second");
             org.bukkit.inventory.ItemStack itemStack = ItemBuilder.create(Material.valueOf(itemJson.getString("type")), itemJson.getInt("amount"), null);
             JSONObject enchantmentsJson = itemJson.optJSONObject("enchantment");

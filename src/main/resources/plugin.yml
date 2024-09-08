@@ -5,5 +5,9 @@ database: true
 website: https://github.com/lightnew10
 api-version: '1.20'
 authors: [lightnew]
+depend: [ ProtocolLib ]
 commands:
   npc:
+    permission: npc.litefp
+  record:
+    permission: record.litefp

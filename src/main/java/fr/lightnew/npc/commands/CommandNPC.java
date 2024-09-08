@@ -2,13 +2,9 @@ package fr.lightnew.npc.commands;
 
 import com.mojang.datafixers.util.Pair;
 import fr.lightnew.npc.LiteFP;
-import fr.lightnew.npc.entities.NPCCreator;
+import fr.lightnew.npc.entities.npc.NPCCreator;
 import fr.lightnew.npc.gui.GUINpcs;
 import fr.lightnew.npc.sql.RequestNPC;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityEffect;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectList;
-import net.minecraft.world.entity.EnumItemSlot;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -16,7 +12,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_20_R1.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -95,30 +90,30 @@ public class CommandNPC implements CommandExecutor, TabCompleter {
                         break;
                     }
                     case "move": {
-                        Bukkit.getOnlinePlayers().forEach(players -> npc.updatePosition(players, player.getLocation()));
+                        Bukkit.getOnlinePlayers().forEach(players -> npc.teleport(players, player.getLocation(), true));
                         player.sendMessage(ChatColor.GOLD + "NPC has been teleported");
                         break;
                     }
                     case "tp": {
-                        player.teleport(npc.getEntityPlayer().getBukkitEntity());
+                        player.teleport(npc.getServerPlayer().getBukkitEntity());
                         player.sendMessage(ChatColor.GOLD + "Teleported to " + npc.getName() + " (" + npc.getId() +")");
                         break;
                     }
                     case "equip": {
-                        Bukkit.getOnlinePlayers().forEach(players -> npc.updateStuff(players, Arrays.asList(
-                                List.of(Pair.of(EnumItemSlot.a, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.HAND)))),
-                                List.of(Pair.of(EnumItemSlot.b, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.OFF_HAND)))),
-                                List.of(Pair.of(EnumItemSlot.c, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.FEET)))),
-                                List.of(Pair.of(EnumItemSlot.d, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.LEGS)))),
-                                List.of(Pair.of(EnumItemSlot.e, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.CHEST)))),
-                                List.of(Pair.of(EnumItemSlot.f, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.HEAD))))
+                        Bukkit.getOnlinePlayers().forEach(players -> npc.updateEquipment(players, Arrays.asList(
+                                List.of(Pair.of(net.minecraft.world.entity.EquipmentSlot.MAINHAND, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.HAND)))),
+                                List.of(Pair.of(net.minecraft.world.entity.EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.OFF_HAND)))),
+                                List.of(Pair.of(net.minecraft.world.entity.EquipmentSlot.FEET, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.FEET)))),
+                                List.of(Pair.of(net.minecraft.world.entity.EquipmentSlot.LEGS, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.LEGS)))),
+                                List.of(Pair.of(net.minecraft.world.entity.EquipmentSlot.CHEST, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.CHEST)))),
+                                List.of(Pair.of(net.minecraft.world.entity.EquipmentSlot.HEAD, CraftItemStack.asNMSCopy(player.getInventory().getItem(EquipmentSlot.HEAD))))
                         )));
                         player.sendMessage(ChatColor.GOLD + "Your stuff is given");
                         break;
                     }
                     case "effect": {
-                        MobEffect mobEffect = new MobEffect(MobEffectList.a(24), 1000, 1, true, true);
-                        ((CraftPlayer) player).getHandle().c.a(new PacketPlayOutEntityEffect(player.getEntityId(), mobEffect));
+                        /*MobEffect mobEffect = new MobEffect(MobEffectList.a(24), 1000, 1, true, true);
+                        ((CraftPlayer) player).getHandle().c.a(new PacketPlayOutEntityEffect(player.getEntityId(), mobEffect));*/
                         //((CraftPlayer) player).getHandle().c.a(new PacketPlayOutRemoveEntityEffect(player.getEntityId(), new MobEffect(MobEffectList.a(2), 1, 1).c()));
                         player.sendMessage(ChatColor.GOLD + "Effect given");
                         break;
@@ -168,7 +163,7 @@ public class CommandNPC implements CommandExecutor, TabCompleter {
                         return false;
                     }
                     StringBuilder builder = new StringBuilder();
-                    for (int i = 1; i < args.length; i++)
+                    for (int i = 2; i < args.length; i++)
                         builder.append(args[i] + " ");
 
                     String name = builder.toString();

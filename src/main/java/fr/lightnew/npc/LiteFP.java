@@ -1,7 +1,10 @@
 package fr.lightnew.npc;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
 import fr.lightnew.npc.commands.CommandNPC;
-import fr.lightnew.npc.entities.NPCCreator;
+import fr.lightnew.npc.commands.RecordCommand;
+import fr.lightnew.npc.entities.npc.NPCCreator;
 import fr.lightnew.npc.events.PlayerManager;
 import fr.lightnew.npc.sql.RequestNPC;
 import fr.lightnew.npc.tools.ConsoleLog;
@@ -26,6 +29,8 @@ public final class LiteFP extends JavaPlugin {
     @Getter
     private static Connection connection;
     public static WorkerLoadNPC workerLoadNPC;
+    @Getter
+    private ProtocolManager protocolManager;
 
     @Override
     public void onLoad() {
@@ -33,6 +38,7 @@ public final class LiteFP extends JavaPlugin {
         saveDefaultConfig();
         createDataBase();
         connectSQL();
+        protocolManager = ProtocolLibrary.getProtocolManager();
     }
 
     @Override
@@ -49,6 +55,8 @@ public final class LiteFP extends JavaPlugin {
         */
         getCommand("npc").setExecutor(new CommandNPC());
         getCommand("npc").setTabCompleter(new CommandNPC());
+        getCommand("record").setExecutor(new RecordCommand());
+        getCommand("record").setTabCompleter(new RecordCommand());
 
         /*
         Listener Events
