@@ -141,8 +141,8 @@ public class PlayerManager implements Listener {
         event.getNpcManager().changeMetadata(event.getPlayer(), metadataNPC);
 
         PlayerUtils.changeCameraPlayer(event.getPlayer(), null, 0, null);
-        /*event.getNpcManager().playAnimation(event.getPlayer(), AnimationNPC.SWING_MAIN_HAND);
+        event.getNpcManager().playAnimation(event.getPlayer(), AnimationNPC.SWING_MAIN_HAND);
         event.getNpcManager().moveNaturally(new Location(Bukkit.getWorld("world"), 25.52, 96, 31.71),
-                new Location(Bukkit.getWorld("world"), 25.59, 96, 21.30), 0.1);*/
+                new Location(Bukkit.getWorld("world"), 25.59, 96, 21.30), 0.1);
     }*/
 }
