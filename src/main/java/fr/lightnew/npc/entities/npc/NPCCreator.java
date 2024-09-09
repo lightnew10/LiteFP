@@ -219,6 +219,7 @@ public class NPCCreator {
         CompletableFuture<Void> future2 = new CompletableFuture<>();
         CompletableFuture<Void> future3 = new CompletableFuture<>();
         CompletableFuture<Void> future4 = new CompletableFuture<>();
+        CompletableFuture<Void> future5 = new CompletableFuture<>();
         serverPlayer.setPos(location.getX(), location.getY(), location.getZ());
 
         connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, serverPlayer));
@@ -232,8 +233,13 @@ public class NPCCreator {
         future4.completeOnTimeout(null, 150, TimeUnit.MILLISECONDS);
         future4.thenRun(() -> ((CraftPlayer) player).getHandle().connection.send(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(playerTeam, true)));
 
-        future2.completeOnTimeout(null, 300, TimeUnit.MILLISECONDS);
-        future2.thenRun(() -> teleport(player, location, false));
+        future2.completeOnTimeout(null, 400, TimeUnit.MILLISECONDS);
+        future2.thenRun(() -> {
+            ((CraftPlayer) player).getHandle().connection.send(new ClientboundMoveEntityPacket.Pos(serverPlayer.getId(), (short)(int)(location.getX() * 4096.0D), (short)(int)(location.getY() * 4096.0D), (short)(int)(location.getZ() * 4096.0D), true));
+            ((CraftPlayer) player).getHandle().connection.send(new ClientboundTeleportEntityPacket(serverPlayer));
+            ((CraftPlayer) player).getHandle().connection.send(new ClientboundMoveEntityPacket.Rot(serverPlayer.getId(), (byte)(int)(location.getYaw() % 360.0D * 256.0D / 360.0D), (byte)(int)(location.getPitch() % 360.0D * 256.0D / 360.0D), true));
+            ((CraftPlayer) player).getHandle().connection.send(new ClientboundRotateHeadPacket(serverPlayer, (byte)(int)(location.getYaw() % 360.0D * 256.0D / 360.0D)));
+        });
 
         future3.completeOnTimeout(null, 300, TimeUnit.MILLISECONDS);
         future3.thenRun(() -> connection.send(new ClientboundPlayerInfoRemovePacket(List.of(serverPlayer.getUUID()))));
@@ -268,13 +274,29 @@ public class NPCCreator {
     }
 
     public void teleport(Player player, Location location, boolean save) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
         this.serverPlayer.setPos(location.getX(), location.getY(), location.getZ());
         float yaw = location.getYaw();
         float pitch = location.getPitch();
         this.serverPlayer.setYRot(((yaw % 360) * 256 / 360));
         this.serverPlayer.setXRot(((pitch % 360) * 256 / 360));
-        Bukkit.getScheduler().runTask(LiteFP.instance, () -> {
+
+        CompletableFuture<Void> timeOutTeleport = new CompletableFuture<>();
+        CompletableFuture<Void> timeOutRotation = new CompletableFuture<>();
+
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundTeleportEntityPacket(serverPlayer));
+
+        /*timeOutTeleport.completeOnTimeout(null, 150, TimeUnit.MILLISECONDS);
+        timeOutTeleport.thenRun(() -> {
+            ((CraftPlayer) player).getHandle().connection.send(new ClientboundMoveEntityPacket.Pos(serverPlayer.getId(), (short)(int)(location.getX() * 4096.0D), (short)(int)(location.getY() * 4096.0D), (short)(int)(location.getZ() * 4096.0D), true));
+        });*/
+
+        timeOutRotation.completeOnTimeout(null, 400, TimeUnit.MILLISECONDS);
+        timeOutRotation.thenRun(() -> {
+            ((CraftPlayer) player).getHandle().connection.send(new ClientboundMoveEntityPacket.Rot(serverPlayer.getId(), (byte)(int)(location.getYaw() % 360.0D * 256.0D / 360.0D), (byte)(int)(location.getPitch() % 360.0D * 256.0D / 360.0D), true));
+            ((CraftPlayer) player).getHandle().connection.send(new ClientboundRotateHeadPacket(serverPlayer, (byte)(int)(location.getYaw() % 360.0D * 256.0D / 360.0D)));
+        });
+
+        /*Bukkit.getScheduler().runTask(LiteFP.instance, () -> {
             ((CraftPlayer) player).getHandle().connection.send(new ClientboundTeleportEntityPacket(serverPlayer));
             Bukkit.getScheduler().runTaskLater(LiteFP.instance, () -> {
                 ((CraftPlayer) player).getHandle().connection.send(new ClientboundRotateHeadPacket(serverPlayer, (byte) ((yaw % 360) * 256 / 360)));
@@ -289,10 +311,11 @@ public class NPCCreator {
                             true));
                 }, 1L);
             }, 1L);
-        });
-        this.location = new Location(this.serverPlayer.getBukkitEntity().getWorld(), this.serverPlayer.getX(), this.serverPlayer.getY(), this.serverPlayer.getZ(), this.serverPlayer.getYRot(), this.serverPlayer.getXRot());
+        });*/
+        this.location = location;
         if (save)
             addWaiting();
+        ConsoleLog.info(id, location);
     }
 
     public void updateEquipment(Player player, List<List<Pair<EquipmentSlot, ItemStack>>> content) {
