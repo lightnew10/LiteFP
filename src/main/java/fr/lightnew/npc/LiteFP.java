@@ -70,6 +70,7 @@ public final class LiteFP extends JavaPlugin {
     public void onDisable() {
         if (!Bukkit.getOnlinePlayers().isEmpty())
             Bukkit.getOnlinePlayers().forEach(player -> player.kickPlayer("Reload in progress..."));
+        list_waiting_update_npc.values().forEach(RequestNPC::updateNPC);
         list_npc.values().forEach(RequestNPC::updateNPC);
         ConsoleLog.success("Plugin stopped");
     }
@@ -115,6 +116,6 @@ public final class LiteFP extends JavaPlugin {
             list_waiting_update_npc.values().forEach(RequestNPC::updateNPC);
             list_waiting_update_npc.clear();
             //ConsoleLog.success("NPC's updated");
-        }, 0, (20 * 60 * 5));
+        }, 0, (20 * 30));
     }
 }
