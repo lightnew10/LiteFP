@@ -54,6 +54,10 @@ public class ItemBuilder {
         return create(material, amount, null,null, name, null);
     }
 
+    public static ItemStack create(Material material, String name) {
+        return create(material, 1, null,null, name, null);
+    }
+
     public static ItemStack skull(int amount, String name, String owner, String... lores){
         ItemStack itemStack;
         SkullMeta itemMeta;
