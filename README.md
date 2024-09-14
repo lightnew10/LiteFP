@@ -45,4 +45,42 @@ public void createMyNPCCustomTexture(String texture, String signature) {
 }
 ```
 
-## Features Soon (walk npc, more text above npc)
+## How to create custom entity NPC
+
+```java
+public void createMyEntityCustom(String name, Location location) {
+    //Create simple armor stand with a name
+    //Server level you can get with 
+    EntityCreator entityCreator = new EntityCreator(EntityType.ARMOR_STAND, player.getLocation(), ServerUtils.getServerLevel(), "test");
+    //if you want remove the name
+    entityCreator.setVisibleName(false);
+
+    //Metadata !
+    //Metadata is all data of entity if you want set baby, small, on fire...
+    //Example with ArmorStand
+    MetadataNPC metadataNPC = new MetadataNPC();
+    metadataNPC.setArmorStandSmall(true);
+    metadataNPC.setInvisible(true);
+    //Example with parrot
+    metadataNPC.setParrotColor(ParrotColor.RED_BLUE);
+
+    //With your Metadata
+    entityCreator.create(player, metadataNPC);
+    //With nothing
+    entityCreator.create(player);
+}
+```
+
+## New event PlayerSpawnInServerEvent
+PlayerSpawnInServerEvent is not the same as PlayerJoinEvent! 
+
+- PlayerJoinEvent corresponds to the arrival of a player on the server 
+
+- PlayerSpawnInServerEvent corresponds to the arrival of a player on the server physically when his corpse spawns on the server.
+```java
+@EventHandler
+public void onSpawn(PlayerSpawnInServerEvent event) {
+    //You have only event.getPlayer();
+    event.getPlayer();
+}
+```
