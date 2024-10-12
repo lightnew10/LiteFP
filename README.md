@@ -96,8 +96,12 @@ public void onSpawn(PlayerSpawnInServerEvent event) {
 
 ## New features coming soon
 - Modify type of npc (Zombie, Villager, Allay...)
+<<<<<<< Updated upstream
 - Add action (execute command...)
 - recording system (to move the NPC infinitely to a specific location)
 - sort in gui all npc (sort by world, id, nearby...)
 - System lang custom (multi languages)
 - Design information and config
+=======
+- Add action (execute command...)
+>>>>>>> Stashed changes

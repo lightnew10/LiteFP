@@ -109,8 +109,12 @@ public class CommandNPC implements CommandExecutor, TabCompleter {
 
                 switch (argument) {
                     case "config": {
+<<<<<<< Updated upstream
                         //openMenuConfig(player);
                         player.sendMessage(informationNPC(npc));
+=======
+                        openMenuConfig(player);
+>>>>>>> Stashed changes
                         break;
                     }
                     case "remove": {
@@ -311,7 +315,11 @@ public class CommandNPC implements CommandExecutor, TabCompleter {
         return List.of();
     }
 
+<<<<<<< Updated upstream
     /*private void openMenuConfig(Player player) {
+=======
+    private void openMenuConfig(Player player) {
+>>>>>>> Stashed changes
         Inventory inventory = Bukkit.createInventory(player, 6*9, ChatColor.YELLOW + "Config");
         inventory.setItem(0, ItemBuilder.create(Material.TOTEM_OF_UNDYING, ChatColor.RED + "Changer le type"));
         inventory.setItem(1, ItemBuilder.create(Material.TOTEM_OF_UNDYING, ChatColor.RED + "Changer le type"));
@@ -319,6 +327,7 @@ public class CommandNPC implements CommandExecutor, TabCompleter {
         inventory.setItem(3, ItemBuilder.create(Material.TOTEM_OF_UNDYING, ChatColor.RED + "Changer le type"));
         inventory.setItem(4, ItemBuilder.create(Material.TOTEM_OF_UNDYING, ChatColor.RED + "Changer le type"));
         player.openInventory(inventory);
+<<<<<<< Updated upstream
     }*/
 
     private String informationNPC(NPCCreator npc) {
@@ -332,6 +341,8 @@ public class CommandNPC implements CommandExecutor, TabCompleter {
                 ChatColor.GOLD + "Disappear range : " + ChatColor.YELLOW + npc.getDisappearNPCRange() + "\n" +
                 ChatColor.GOLD + "World : " + ChatColor.YELLOW + npc.getLocation().getWorld().getName() + "\n" +
                 ChatColor.GOLD + "Location : X: " + ChatColor.YELLOW + npc.getLocation().getBlockX() + ", Y: " + npc.getLocation().getBlockY() + ", Z: " + npc.getLocation().getBlockZ() + "\n";
+=======
+>>>>>>> Stashed changes
     }
 
     public static HashMap<String, ExternHologram> getExternHologram() {
