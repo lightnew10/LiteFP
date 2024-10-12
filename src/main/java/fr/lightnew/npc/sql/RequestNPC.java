@@ -31,13 +31,16 @@ public class RequestNPC {
 
     public static void createTable() {
         String table = "CREATE TABLE IF NOT EXISTS " + tableDB + "(id int NOT NULL AUTO_INCREMENT PRIMARY KEY, " +
-                "npc_name TEXT," +
-                "npc_skin_name TEXT," +
+                "npc_name VARCHAR(260)," +
+                "npc_skin_name VARCHAR(255)," +
+                "disappear_range int," +
+                "holo_linked_height double," +
+                "linked_hologram VARCHAR(260)," +
                 "npc_skin_texture TEXT," +
                 "npc_skin_signature TEXT," +
-                "location TEXT," +
-                "stuff TEXT," +
-                "effects TEXT," +
+                "location JSON," +
+                "stuff JSON," +
+                "effects JSON," +
                 "created_at DATETIME DEFAULT CURRENT_TIMESTAMP);";
         try {
             PreparedStatement statement = LiteFP.getConnection().prepareStatement(table);
@@ -45,34 +48,6 @@ public class RequestNPC {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    public static NPCCreator getNPC(String id) {
-        NPCCreator npcCreator = null;
-        try {
-            PreparedStatement statement = LiteFP.getConnection().prepareStatement("SELECT * FROM " + tableDB + " WHERE npc_id=?");
-            statement.setString(1, id);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                if (jsonToLocation(new JSONObject(resultSet.getString("location"))) != null) {
-                    npcCreator = new NPCCreator(
-                            resultSet.getString("npc_name"),
-                            jsonToLocation(new JSONObject(resultSet.getString("location"))),
-                            resultSet.getString("npc_skin_name"),
-                            resultSet.getString("npc_skin_texture"),
-                            resultSet.getString("npc_skin_signature"));
-                    npcCreator.setId(resultSet.getInt("id"));
-                    npcCreator.setEquipment(jsonToPairs(new JSONObject(resultSet.getString("stuff"))));
-                    EffectNPC effectNPC = jsonToEffectNPC(new JSONObject(resultSet.getString("effects")));
-                    npcCreator.getEffects().setLookLock(effectNPC.getLookLock());
-                    npcCreator.getEffects().setCollides(effectNPC.getCollides());
-                } else
-                    ConsoleLog.error("NPC (" + resultSet.getInt("id") + ") cannot spawn, the location is null or world is null");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return npcCreator;
     }
 
     public static Map<Integer, NPCCreator> getAllNPC() {
@@ -90,6 +65,9 @@ public class RequestNPC {
                             resultSet.getString("npc_skin_signature"));
 
                     npcCreator.setId(resultSet.getInt("id"));
+                    npcCreator.setDisappearNPCRange(resultSet.getInt("disappear_range"));
+                    npcCreator.setLinkedHologram(resultSet.getString("linked_hologram"));
+                    npcCreator.setLinkedHologramHeight(resultSet.getDouble("holo_linked_height"));
                     npcCreator.setEquipment(jsonToPairs(new JSONObject(resultSet.getString("stuff"))));
                     EffectNPC effectNPC = jsonToEffectNPC(new JSONObject(resultSet.getString("effects")));
                     npcCreator.getEffects().setLookLock(effectNPC.getLookLock());
@@ -109,20 +87,26 @@ public class RequestNPC {
             PreparedStatement insert = LiteFP.getConnection().prepareStatement("INSERT INTO " + tableDB + " (" +
                     "npc_name," +
                     "npc_skin_name," +
+                    "disappear_range," +
+                    "linked_hologram," +
+                    "holo_linked_height," +
                     "npc_skin_texture," +
                     "npc_skin_signature," +
                     "location," +
                     "stuff," +
                     "effects)" +
-                    "values (?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
+                    "values (?,?,?,?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
 
             insert.setString(1, npcCreator.getName());
             insert.setString(2, npcCreator.getSkinName());
-            insert.setString(3, npcCreator.getTexture());
-            insert.setString(4, npcCreator.getSignature());
-            insert.setString(5, locationToJson(npcCreator.getLocation()).toString());
-            insert.setString(6, pairsToJson(npcCreator.getEquipment()).toString());
-            insert.setString(7, effectNPCToJson(npcCreator.getEffects()).toString());
+            insert.setInt(3, npcCreator.getDisappearNPCRange());
+            insert.setString(4, npcCreator.getLinkedHologram() == null ? null : npcCreator.getLinkedHologram().getName());
+            insert.setDouble(5, npcCreator.getLinkedHologramHeight());
+            insert.setString(6, npcCreator.getTexture());
+            insert.setString(7, npcCreator.getSignature());
+            insert.setString(8, locationToJson(npcCreator.getLocation()).toString());
+            insert.setString(9, pairsToJson(npcCreator.getEquipment()).toString());
+            insert.setString(10, effectNPCToJson(npcCreator.getEffects()).toString());
 
             int i = insert.executeUpdate();
             if (i == 1) {
@@ -151,6 +135,9 @@ public class RequestNPC {
         try (PreparedStatement update = LiteFP.getConnection().prepareStatement("UPDATE " + tableDB + " SET " +
                     "npc_name=?," +
                     "npc_skin_name=?," +
+                    "disappear_range=?," +
+                    "linked_hologram=?," +
+                    "holo_linked_height=?," +
                     "npc_skin_texture=?," +
                     "npc_skin_signature=?," +
                     "location=?," +
@@ -159,12 +146,15 @@ public class RequestNPC {
                     " WHERE id=?")) {
             update.setString(1, npcCreator.getName());
             update.setString(2, npcCreator.getSkinName());
-            update.setString(3, npcCreator.getTexture());
-            update.setString(4, npcCreator.getSignature());
-            update.setString(5, locationToJson(npcCreator.getLocation()).toString());
-            update.setString(6, pairsToJson(npcCreator.getEquipment()).toString());
-            update.setString(7, effectNPCToJson(npcCreator.getEffects()).toString());
-            update.setString(8, String.valueOf(npcCreator.getId()));
+            update.setInt(3, npcCreator.getDisappearNPCRange());
+            update.setString(4, npcCreator.getLinkedHologram() == null ? null : npcCreator.getLinkedHologram().getName());
+            update.setDouble(5, npcCreator.getLinkedHologramHeight());
+            update.setString(6, npcCreator.getTexture());
+            update.setString(7, npcCreator.getSignature());
+            update.setString(8, locationToJson(npcCreator.getLocation()).toString());
+            update.setString(9, pairsToJson(npcCreator.getEquipment()).toString());
+            update.setString(10, effectNPCToJson(npcCreator.getEffects()).toString());
+            update.setString(11, String.valueOf(npcCreator.getId()));
 
             update.executeUpdate();
         } catch (SQLException e) {

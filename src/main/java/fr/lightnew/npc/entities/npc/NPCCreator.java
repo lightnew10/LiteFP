@@ -6,12 +6,15 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.datafixers.util.Pair;
 import fr.lightnew.npc.LiteFP;
+import fr.lightnew.npc.commands.CommandNPC;
+import fr.lightnew.npc.entities.ExternHologram;
 import fr.lightnew.npc.entities.LFPLocation;
+import fr.lightnew.npc.entities.metas.AnimationNPC;
 import fr.lightnew.npc.sql.RequestNPC;
-import fr.lightnew.npc.tools.ConsoleLog;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import me.filoghost.holographicdisplays.api.hologram.Hologram;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -38,7 +41,6 @@ import org.bukkit.util.Vector;
 
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -48,14 +50,20 @@ import java.util.concurrent.TimeUnit;
 @ToString
 public class NPCCreator {
 
+    private Set<UUID> showingNPCToPlayer = new HashSet<>();
+
     private int id;
     private ServerPlayer serverPlayer;
     private String name;
-    private String npcName;
+    private final String nameNPCMRegistry;
     private String skinName;
     private String texture;
     private String signature;
     private Location location;
+    private int disappearNPCRange;
+    private ExternHologram linkedHologram;
+    private double linkedHologramHeight;
+    private double distance_look;
 
     private List<List<Pair<EquipmentSlot, ItemStack>>> equipment;
     private EffectNPC effects;
@@ -66,11 +74,19 @@ public class NPCCreator {
     private ServerLevel serverLevel;
     private GameProfile gameProfile;
     private PlayerTeam playerTeam;
+    private Hologram hologram;
+    private Location location_hologram;
 
     public NPCCreator(String nameNPC, Location locationNPC, String nameSkin) {
         this.id = new Random().nextInt(999999999);
-        this.name = nameNPC;
-        this.npcName = "NPC " + id;
+        if (!nameNPC.startsWith("§r"))
+            name = ChatColor.RESET + "" + ChatColor.translateAlternateColorCodes('&', nameNPC);
+        else
+            name = ChatColor.translateAlternateColorCodes('&', nameNPC);
+        nameNPCMRegistry = "NPC-" + UUID.randomUUID().toString().substring(0, 12);
+        this.disappearNPCRange = 48;
+        this.linkedHologramHeight = 3.5;
+        this.distance_look = 5;
         this.location = locationNPC;
         this.skinName = nameSkin;
         String[] skins = getSkin(skinName);
@@ -84,8 +100,14 @@ public class NPCCreator {
 
     public NPCCreator(String nameNPC, Location locationNPC, String nameSkin, String texture, String signature) {
         id = new Random().nextInt(0, 999999999);
-        name = nameNPC;
-        this.npcName = "NPC-" + id;
+        if (!nameNPC.startsWith("§r"))
+            name = ChatColor.RESET + "" + ChatColor.translateAlternateColorCodes('&', nameNPC);
+        else
+            name = ChatColor.translateAlternateColorCodes('&', nameNPC);
+        nameNPCMRegistry = "NPC-" + UUID.randomUUID().toString().substring(0, 12);
+        this.disappearNPCRange = 48;
+        this.linkedHologramHeight = 3.5;
+        this.distance_look = 5;
         location = locationNPC;
         skinName = nameSkin;
         this.texture = texture;
@@ -99,19 +121,29 @@ public class NPCCreator {
         this.serverLevel = ((CraftWorld) Bukkit.getWorld(location.getWorld().getName())).getHandle();
         effects = new EffectNPC();
         equipment = new ArrayList<>();
+        GameProfile gameProfile;
+        if (Bukkit.getServer().getOnlineMode())
+            gameProfile = new GameProfile(UUID.randomUUID(), nameNPCMRegistry);
+        else
+            gameProfile = new GameProfile(UUID.nameUUIDFromBytes((nameNPCMRegistry).getBytes()), nameNPCMRegistry);
 
-        GameProfile gameProfile = new GameProfile(UUID.randomUUID(), npcName);
         gameProfile.getProperties().put("textures", new Property("textures", texture, signature));
         ServerPlayer npc = new ServerPlayer(minecraftServer, serverLevel, gameProfile);
         this.gameProfile = gameProfile;
         npc.setPos(location.getX(), location.getY(), location.getZ());
-        playerTeam = new PlayerTeam(new Scoreboard(), "npc" + new SecureRandom().nextInt(0, 999999999));
+
+        playerTeam = new PlayerTeam(new Scoreboard(), "npc" + id);
         playerTeam.setNameTagVisibility(Team.Visibility.NEVER);
-        playerTeam.getPlayers().add(npcName);
+        playerTeam.getPlayers().add(nameNPCMRegistry);
+        Location loc = location.clone();
+        loc.setY(loc.getY() + 2.5);
+        location_hologram = loc;
+        hologram = LiteFP.holographicDisplaysAPI.createHologram(location_hologram);
+        hologram.getLines().appendText(name);
         return npc;
     }
 
-    public void createNPC(Player player) {
+    public void spawnNPC(Player player) {
         if (skinName != null) {
             String[] skin = getSkin(skinName);
             if (skin != null) {
@@ -126,41 +158,41 @@ public class NPCCreator {
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundAnimatePacket(serverPlayer, animationNPC.getId()));
     }
 
-    public void changeMetadata(Player player, MetadataNPC metadataNPC) {
+    public void changeMetadata(Player player, MetadataNPC metadataNPC, boolean delay) {
         SynchedEntityData dataWatcher = serverPlayer.getEntityData();
 
-        dataWatcher.set(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), metadataNPC.getBytesDefaultData());
-        ConsoleLog.info(metadataNPC.getBytesDefaultData());
+        dataWatcher.set(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), metadataNPC.getBytesDataLivingNPC());
         dataWatcher.set(new EntityDataAccessor<>(5, EntityDataSerializers.BOOLEAN), metadataNPC.isHasNoGravity());
         dataWatcher.set(new EntityDataAccessor<>(6, EntityDataSerializers.POSE), metadataNPC.getPose());
 
         changeTeam(player, metadataNPC.getColorGlow(), metadataNPC.isCollide());
 
         CompletableFuture<Void> future = new CompletableFuture<>();
-        future.completeOnTimeout(null, 150, TimeUnit.MILLISECONDS);
-        future.thenRun(() -> ((CraftPlayer) player).getHandle().connection.send(new ClientboundSetEntityDataPacket(serverPlayer.getId(), dataWatcher.getNonDefaultValues())));
+        if (delay) {
+            future.completeOnTimeout(null, 150, TimeUnit.MILLISECONDS);
+            future.thenRun(() -> ((CraftPlayer) player).getHandle().connection.send(new ClientboundSetEntityDataPacket(serverPlayer.getId(), dataWatcher.getNonDefaultValues())));
+        } else
+            ((CraftPlayer) player).getHandle().connection.send(new ClientboundSetEntityDataPacket(serverPlayer.getId(), dataWatcher.getNonDefaultValues()));
     }
 
     private void changeTeam(Player player, ChatFormatting color, boolean collide) {
-        String teamName = String.valueOf(new SecureRandom().nextInt(0, 999999999));
-        PlayerTeam pt = new PlayerTeam(((CraftPlayer) player).getScoreboard().getHandle(), teamName);
-        pt.setNameTagVisibility(Team.Visibility.NEVER);
-        pt.getPlayers().add(npcName);
+        playerTeam.setNameTagVisibility(Team.Visibility.NEVER);
+        if (!playerTeam.getPlayers().contains(nameNPCMRegistry))
+            playerTeam.getPlayers().add(nameNPCMRegistry);
 
-        pt.setCollisionRule(collide ? Team.CollisionRule.ALWAYS : Team.CollisionRule.NEVER);
+        playerTeam.setCollisionRule(collide ? Team.CollisionRule.ALWAYS : Team.CollisionRule.NEVER);
         if (color != null)
-            pt.setColor(color);
+            playerTeam.setColor(color);
 
         ((CraftPlayer) player).getHandle().connection.send(ClientboundSetPlayerTeamPacket.createRemovePacket(playerTeam));
-        ((CraftPlayer) player).getHandle().connection.send(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(pt, true));
-        playerTeam = pt;
+        ((CraftPlayer) player).getHandle().connection.send(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(playerTeam, true));
     }
 
     public void moveNaturally(final Location startLocation, final Location endLocation, final double speed, boolean infinite) {
-        org.bukkit.util.Vector direction = endLocation.toVector().subtract(startLocation.toVector()).normalize();
+        Vector direction = endLocation.toVector().subtract(startLocation.toVector()).normalize();
 
         new BukkitRunnable() {
-            Location currentLocation = startLocation.clone();
+            final Location currentLocation = startLocation.clone();
 
             @Override
             public void run() {
@@ -183,8 +215,8 @@ public class NPCCreator {
 
     public void moveMultiLocalisationCommand(Player player, List<LFPLocation> locations) {
         NPCCreator creator = new NPCCreator("NPC-TESTING", locations.stream().findFirst().get().getLocation(), player.getName());
-        creator.createNPC(player);
-        NPCCreator npcCreator = creator;
+        creator.spawnNPC(player);
+        MetadataNPC meta = creator.metadataNPC;
         if (locations == null)
             return;
         locations = new ArrayList<>(locations);
@@ -195,19 +227,29 @@ public class NPCCreator {
                 finalLocations.stream().findFirst().ifPresent(element -> {
                     if (element.getLocation() == null)
                         return;
-                    npcCreator.teleport(player, element.getLocation(), false);
+                    //Teleport NPC
+                    creator.teleportPresetMultiTeleport(player, element.getLocation());
+                    creator.setLocation_hologram(element.getLocation());
+                    //Play animation
                     if (element.getAnimationNPC() != null)
                         playAnimation(player, element.getAnimationNPC());
+                    //Set Pose
+                    meta.setPose(element.getPoseNPC());
+                    creator.changeMetadata(player, meta, true);
 
                     finalLocations.remove(element);
                     if (finalLocations.isEmpty()) {
+                        creator.hologram.delete();
                         CompletableFuture<Void> f = new CompletableFuture<>();
-                        f.completeOnTimeout(null, 3, TimeUnit.SECONDS).thenRunAsync(() -> npcCreator.destroy(player));
+                        f.completeOnTimeout(null, 3, TimeUnit.SECONDS).thenRunAsync(() -> {
+                            creator.destroy(player);
+                            creator.hologram.delete();
+                        });
                         cancel();
                     }
                 });
             }
-        }.runTaskTimer(LiteFP.instance, 0L, 1L);
+        }.runTaskTimer(LiteFP.instance, 0L, 0L);
     }
 
     public void updateAllPacketEntityPlayer(Player player) {
@@ -219,7 +261,6 @@ public class NPCCreator {
         CompletableFuture<Void> future2 = new CompletableFuture<>();
         CompletableFuture<Void> future3 = new CompletableFuture<>();
         CompletableFuture<Void> future4 = new CompletableFuture<>();
-        CompletableFuture<Void> future5 = new CompletableFuture<>();
         serverPlayer.setPos(location.getX(), location.getY(), location.getZ());
 
         connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, serverPlayer));
@@ -231,7 +272,10 @@ public class NPCCreator {
             updateEquipment(player, equipment);
 
         future4.completeOnTimeout(null, 150, TimeUnit.MILLISECONDS);
-        future4.thenRun(() -> ((CraftPlayer) player).getHandle().connection.send(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(playerTeam, true)));
+        future4.thenRun(() -> {
+            ((CraftPlayer) player).getHandle().connection.send(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(playerTeam, true));
+            ((CraftPlayer) player).getHandle().connection.send(ClientboundSetPlayerTeamPacket.createPlayerPacket(playerTeam, name, ClientboundSetPlayerTeamPacket.Action.ADD));
+        });
 
         future2.completeOnTimeout(null, 400, TimeUnit.MILLISECONDS);
         future2.thenRun(() -> {
@@ -243,21 +287,14 @@ public class NPCCreator {
 
         future3.completeOnTimeout(null, 300, TimeUnit.MILLISECONDS);
         future3.thenRun(() -> connection.send(new ClientboundPlayerInfoRemovePacket(List.of(serverPlayer.getUUID()))));
+
         addWaiting();
     }
 
-    public void updateName(Player player, String newname) {
-        remove(player);
+    public void updateName(String newname) {
         this.name = ChatColor.translateAlternateColorCodes('&', newname);
-        ServerPlayer npc = new ServerPlayer(minecraftServer, serverLevel,  new GameProfile(serverPlayer.getUUID(), npcName));
-        String[] skin = getSkin(skinName);
-        if (skin != null) {
-            npc.getBukkitEntity().getProfile().getProperties().removeAll("textures");
-            npc.getBukkitEntity().getProfile().getProperties().put("textures", new Property("textures", skin[0], skin[1]));
-        }
-        npc.setPos(location.getX(), location.getY(), location.getZ());
-        serverPlayer = npc;
-        updateAllPacketEntityPlayer(player);
+        hologram.getLines().remove(0);
+        hologram.getLines().insertText(0, name);
         addWaiting();
     }
 
@@ -280,42 +317,63 @@ public class NPCCreator {
         this.serverPlayer.setYRot(((yaw % 360) * 256 / 360));
         this.serverPlayer.setXRot(((pitch % 360) * 256 / 360));
 
-        CompletableFuture<Void> timeOutTeleport = new CompletableFuture<>();
         CompletableFuture<Void> timeOutRotation = new CompletableFuture<>();
 
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundTeleportEntityPacket(serverPlayer));
 
-        /*timeOutTeleport.completeOnTimeout(null, 150, TimeUnit.MILLISECONDS);
-        timeOutTeleport.thenRun(() -> {
-            ((CraftPlayer) player).getHandle().connection.send(new ClientboundMoveEntityPacket.Pos(serverPlayer.getId(), (short)(int)(location.getX() * 4096.0D), (short)(int)(location.getY() * 4096.0D), (short)(int)(location.getZ() * 4096.0D), true));
-        });*/
-
-        timeOutRotation.completeOnTimeout(null, 400, TimeUnit.MILLISECONDS);
+        if (linkedHologram != null)
+            linkedHologram.setLocation(location, linkedHologramHeight);
+        timeOutRotation.completeOnTimeout(null, 300, TimeUnit.MILLISECONDS);
         timeOutRotation.thenRun(() -> {
             ((CraftPlayer) player).getHandle().connection.send(new ClientboundMoveEntityPacket.Rot(serverPlayer.getId(), (byte)(int)(location.getYaw() % 360.0D * 256.0D / 360.0D), (byte)(int)(location.getPitch() % 360.0D * 256.0D / 360.0D), true));
             ((CraftPlayer) player).getHandle().connection.send(new ClientboundRotateHeadPacket(serverPlayer, (byte)(int)(location.getYaw() % 360.0D * 256.0D / 360.0D)));
         });
 
-        /*Bukkit.getScheduler().runTask(LiteFP.instance, () -> {
-            ((CraftPlayer) player).getHandle().connection.send(new ClientboundTeleportEntityPacket(serverPlayer));
-            Bukkit.getScheduler().runTaskLater(LiteFP.instance, () -> {
-                ((CraftPlayer) player).getHandle().connection.send(new ClientboundRotateHeadPacket(serverPlayer, (byte) ((yaw % 360) * 256 / 360)));
-                Bukkit.getScheduler().runTaskLater(LiteFP.instance, () -> {
-                    ((CraftPlayer) player).getHandle().connection.send(new ClientboundMoveEntityPacket.Rot(serverPlayer.getId(), (byte) ((yaw % 360) * 256 / 360), (byte) ((pitch % 360) * 256 / 360), true));
-                    ((CraftPlayer) player).getHandle().connection.send(new ClientboundMoveEntityPacket.PosRot(serverPlayer.getId(),
-                            (short) ((this.location.getX()*4096) - (location.getX()*4096)),
-                            (short) ((this.location.getY()*4096) - (location.getY()*4096)),
-                            (short) ((this.location.getZ()*4096) - (location.getZ()*4096)),
-                            (byte) ((location.getYaw() % 360) * 256 / 360),
-                            (byte) ((location.getPitch() % 360) * 256 / 360),
-                            true));
-                }, 1L);
-            }, 1L);
-        });*/
         this.location = location;
         if (save)
             addWaiting();
-        ConsoleLog.info(id, location);
+    }
+
+    public void teleportForAll(Location location, boolean save) {
+        this.serverPlayer.setPos(location.getX(), location.getY(), location.getZ());
+        float yaw = location.getYaw();
+        float pitch = location.getPitch();
+        this.serverPlayer.setYRot(((yaw % 360) * 256 / 360));
+        this.serverPlayer.setXRot(((pitch % 360) * 256 / 360));
+
+        ClientboundTeleportEntityPacket clientboundTeleportEntityPacket = new ClientboundTeleportEntityPacket(serverPlayer);
+        ClientboundMoveEntityPacket.Rot clientboundMoveEntityPacket = new ClientboundMoveEntityPacket.Rot(serverPlayer.getId(), (byte)(int)(location.getYaw() % 360.0D * 256.0D / 360.0D), (byte)(int)(location.getPitch() % 360.0D * 256.0D / 360.0D), true);
+        ClientboundRotateHeadPacket clientboundRotateHeadPacket = new ClientboundRotateHeadPacket(serverPlayer, (byte)(int)(location.getYaw() % 360.0D * 256.0D / 360.0D));
+
+        if (linkedHologram != null)
+            linkedHologram.setLocation(location, linkedHologramHeight);
+        Bukkit.getOnlinePlayers().forEach(player -> {
+            CompletableFuture<Void> timeOutRotation = new CompletableFuture<>();
+
+            ((CraftPlayer) player).getHandle().connection.send(clientboundTeleportEntityPacket);
+
+            timeOutRotation.completeOnTimeout(null, 300, TimeUnit.MILLISECONDS);
+            timeOutRotation.thenRun(() -> {
+                ((CraftPlayer) player).getHandle().connection.send(clientboundMoveEntityPacket);
+                ((CraftPlayer) player).getHandle().connection.send(clientboundRotateHeadPacket);
+            });
+        });
+
+        this.location = location;
+        if (save)
+            addWaiting();
+    }
+
+    //Don't use that
+    public void teleportPresetMultiTeleport(Player player, Location location) {
+        this.serverPlayer.setPos(location.getX(), location.getY(), location.getZ());
+        this.serverPlayer.setYRot(((location.getYaw() % 360) * 256 / 360));
+        this.serverPlayer.setXRot(((location.getPitch() % 360) * 256 / 360));
+
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundTeleportEntityPacket(serverPlayer));
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundRotateHeadPacket(serverPlayer, (byte) (int) (location.getYaw() % 360.0D * 256.0D / 360.0D)));
+
+        this.location = location;
     }
 
     public void updateEquipment(Player player, List<List<Pair<EquipmentSlot, ItemStack>>> content) {
@@ -333,6 +391,7 @@ public class NPCCreator {
     }
 
     public void updateCollides(boolean b) {
+        Bukkit.getOnlinePlayers().forEach(player -> changeTeam(player, ChatFormatting.RESET, b));
         effects.setCollides(b);
     }
 
@@ -344,6 +403,7 @@ public class NPCCreator {
     public void destroy(Player player) {
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundRemoveEntitiesPacket(serverPlayer.getId()));
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundPlayerInfoRemovePacket(List.of(serverPlayer.getUUID())));
+        hologram.delete();
         LiteFP.list_npc.remove(id);
         RequestNPC.removeNPC(id);
     }
@@ -362,6 +422,7 @@ public class NPCCreator {
         Map.Entry<Integer, List<LFPLocation>> lastEntry = multiLocation.lastEntry();
         id = lastEntry.getKey()+1;
         multiLocation.put(id, locations);
+        //TODO SAVE THIS
     }
 
     public ServerPlayer getNPC() {
@@ -370,8 +431,6 @@ public class NPCCreator {
 
     public String[] getSkin(String nameSkin) {
         nameSkin = nameSkin.toLowerCase();
-        if (texture != null || signature != null)
-            return new String[] {texture, signature};
         if (LiteFP.skinCache.containsKey(nameSkin))
             return LiteFP.skinCache.get(nameSkin);
         try {
@@ -388,5 +447,30 @@ public class NPCCreator {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public void setLocation_hologram(Location location_hologram) {
+        Location loc = location_hologram.clone();
+        loc.setY(loc.getY()+2.5);
+        hologram.setPosition(loc);
+        this.location_hologram = loc;
+    }
+
+    public void setLinkedHologram(ExternHologram linkedHologram) {
+        this.linkedHologram = linkedHologram;
+        addWaiting();
+    }
+
+    public void setLinkedHologram(String name) {
+        if (name == null)
+            this.linkedHologram = null;
+        else
+            this.linkedHologram = CommandNPC.getExternHologram().getOrDefault(name, null);
+        addWaiting();
+    }
+
+    public void setLinkedHologramHeight(double linkedHologramHeight) {
+        this.linkedHologramHeight = linkedHologramHeight;
+        addWaiting();
     }
 }

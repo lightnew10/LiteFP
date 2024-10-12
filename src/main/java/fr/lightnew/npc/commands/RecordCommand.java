@@ -83,6 +83,7 @@ public class RecordCommand implements CommandExecutor, TabCompleter {
                     ConstructLFPLocation cl = recordPlayers.get(player);
                     cl.getNpc().addMultiLocation(cl.getLocationList());
                     inRecord.remove(player);
+                    recordPlayers.remove(player);
                     player.sendMessage(ChatColor.RED + "Vous n'êtes plus dans le système de record. Votre enregistrement à été sauvegarder");
                     return true;
                 }

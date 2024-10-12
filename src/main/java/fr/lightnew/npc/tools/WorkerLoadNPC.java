@@ -27,7 +27,7 @@ public class WorkerLoadNPC extends BukkitRunnable {
         });*/
         CompletableFuture.runAsync(() -> {
             CompletableFuture<Void> f = new CompletableFuture<>();
-            f.completeOnTimeout(null, 200, TimeUnit.MILLISECONDS).thenRunAsync(() -> creator.createNPC(player));
+            f.completeOnTimeout(null, 200, TimeUnit.MILLISECONDS).thenRunAsync(() -> creator.spawnNPC(player));
         }, Executors.newCachedThreadPool()).thenRun(() -> {
         });
     }

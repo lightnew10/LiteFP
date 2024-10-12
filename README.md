@@ -1,8 +1,18 @@
 # LiteFP
 
-Minecraft version : `1.20.1`
+## Information's
 
-By `[Lightnew]`
+![Static Badge](https://img.shields.io/badge/By-lightnew-blue)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.20.1-brightgreen)
+![Storage](https://img.shields.io/badge/Storage-MySQL-purple)
+
+
+**Dependencies** :
+ - [HolographicDisplays](https://ci.codemc.io/job/filoghost/job/HolographicDisplays/)
+
+**Mysql is the only storage system for this plugin**
+<br>
+**In the future, adding new storage systems**
 
 ## How to Interact with NPC ?
 
@@ -52,12 +62,11 @@ public void createMyEntityCustom(String name, Location location) {
     //Create simple armor stand with a name
     //Server level you can get with 
     EntityCreator entityCreator = new EntityCreator(EntityType.ARMOR_STAND, player.getLocation(), ServerUtils.getServerLevel(), "test");
-    //if you want remove the name
+    //if you want to remove the name
     entityCreator.setVisibleName(false);
 
     //Metadata !
     //Metadata is all data of entity if you want set baby, small, on fire...
-    //Example with ArmorStand
     MetadataNPC metadataNPC = new MetadataNPC();
     metadataNPC.setArmorStandSmall(true);
     metadataNPC.setInvisible(true);
@@ -84,3 +93,11 @@ public void onSpawn(PlayerSpawnInServerEvent event) {
     event.getPlayer();
 }
 ```
+
+## New features coming soon
+- Modify type of npc (Zombie, Villager, Allay...)
+- Add action (execute command...)
+- recording system (to move the NPC infinitely to a specific location)
+- sort in gui all npc (sort by world, id, nearby...)
+- System lang custom (multi languages)
+- Design information and config

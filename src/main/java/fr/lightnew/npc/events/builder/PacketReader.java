@@ -1,6 +1,7 @@
 package fr.lightnew.npc.events.builder;
 
 import fr.lightnew.npc.LiteFP;
+import fr.lightnew.npc.entities.npc.NPCClickType;
 import fr.lightnew.npc.entities.npc.NPCCreator;
 import fr.lightnew.npc.tools.ConsoleLog;
 import io.netty.channel.Channel;
@@ -8,6 +9,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ServerboundChatSessionUpdatePacket;
+import net.minecraft.network.protocol.login.ClientLoginPacketListener;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -24,6 +27,35 @@ public class PacketReader {
     private static Map<UUID, Channel> channels = new HashMap<>();
     private Map<UUID, Integer> processedPackets = new WeakHashMap<>();
 
+    public void inject(Player player) {
+        UUID uuid = player.getUniqueId();
+        String readerName = "Reader-" + uuid;
+        CraftPlayer craftPlayer = (CraftPlayer) player;
+        Object connection = getValuePlayer(craftPlayer.getHandle().connection, "h");
+
+        if (connection == null) {
+            ConsoleLog.info("Connection field is null!");
+            return;
+        }
+        if (!(connection instanceof Connection)) {
+            ConsoleLog.info("Incorrect type: " + connection.getClass().getName());
+            return;
+        }
+        channel = ((Connection) connection).channel;
+        if (channel.pipeline() == null || channel.pipeline().get(readerName) != null) {
+            ConsoleLog.info("Incorrect channel: " + channel);
+            return;
+        }
+        channels.put(uuid, channel);
+        channel.pipeline().addAfter("decoder", readerName, new MessageToMessageDecoder() {
+            @Override
+            protected void decode(ChannelHandlerContext channelHandlerContext, Object packet, List list) throws Exception {
+                list.add(packet);
+                readPacket(player, (Packet<?>) packet);
+            }
+        });
+    }
+
     public void uninject(Player player) {
         channel = channels.get(player.getUniqueId());
         if (channel.pipeline().get("PacketInjector") != null)
@@ -31,6 +63,32 @@ public class PacketReader {
     }
 
     public void readPacket(Player player, Packet<?> packet) {
+        //ConsoleLog.info("Packets -> " +  packet.getClass().getSimpleName());
+        //Sign editable sign
+        /*if (packet.getClass().getSimpleName().equalsIgnoreCase("PacketPlayInUpdateSign")) {
+            try {
+                Field field = packet.getClass().getDeclaredField("c");
+                field.setAccessible(true);
+                String[] signLines = (String[]) field.get(packet);
+                call event with lines here
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            public void openEditableSign(Player player) {
+        Block block = player.getLocation().clone().getBlock();
+        block.setType(Material.OAK_SIGN);
+
+        PacketPlayOutOpenSignEditor packet = new PacketPlayOutOpenSignEditor(new BlockPosition(block.getX(), block.getY(), block.getZ()), true);
+        PacketPlayInUpdateSign p = new PacketPlayInUpdateSign(new BlockPosition(block.getX(), block.getY(), block.getZ()), true, "test", "", "", "");
+        ((CraftPlayer) player).getHandle().c.a(packet);
+        ((CraftPlayer) player).getHandle().c.a(p);
+        block.setType(Material.AIR);
+    }
+        }*/
+        if (packet.getClass().getSimpleName().equalsIgnoreCase("ServerboundChatSessionUpdatePacket")) {
+            Bukkit.getScheduler().scheduleSyncDelayedTask(LiteFP.instance, () ->
+                Bukkit.getPluginManager().callEvent(new PlayerSpawnInServerEvent(player)));
+        }
         if (packet.getClass().getSimpleName().equalsIgnoreCase("PacketPlayInUseEntity")) {
             int id = (int) getValue(packet, "a");
             if (!processedPackets.containsValue(id)) {
@@ -43,13 +101,13 @@ public class PacketReader {
                 NPCCreator npc = list.get(0);
 
                 int size = getValue(packet, "b").getClass().getDeclaredFields().length;
-                ClickType type;
+                NPCClickType type;
                 if (size == 0)
-                    type = player.isSneaking() ? ClickType.SHIFT_LEFT : ClickType.LEFT;
+                    type = player.isSneaking() ? NPCClickType.SHIFT_LEFT : NPCClickType.LEFT;
                 else if (size == 2)
-                    type = player.isSneaking() ? ClickType.SHIFT_RIGHT : ClickType.RIGHT;
+                    type = player.isSneaking() ? NPCClickType.SHIFT_RIGHT : NPCClickType.RIGHT;
                 else
-                    type = ClickType.UNKNOWN;
+                    type = NPCClickType.UNKNOWN;
 
                 if (getValue(packet, "b").getClass().getDeclaredFields().length == 0) {
                     Bukkit.getScheduler().scheduleSyncDelayedTask(LiteFP.instance, () ->
@@ -102,35 +160,6 @@ public class PacketReader {
             exception.printStackTrace();
         }
         return null;
-    }
-
-    public void inject(Player player) {
-        UUID uuid = player.getUniqueId();
-        String readerName = "Reader-" + uuid;
-        CraftPlayer craftPlayer = (CraftPlayer) player;
-        Object connection = getValuePlayer(craftPlayer.getHandle().connection, "h");
-
-        if (connection == null) {
-            ConsoleLog.info("Connection field is null!");
-            return;
-        }
-        if (!(connection instanceof Connection)) {
-            ConsoleLog.info("Incorrect type: " + connection.getClass().getName());
-            return;
-        }
-        channel = ((Connection) connection).channel;
-        if (channel.pipeline() == null || channel.pipeline().get(readerName) != null) {
-            ConsoleLog.info("Incorrect channel: " + channel);
-            return;
-        }
-        channels.put(uuid, channel);
-        channel.pipeline().addAfter("decoder", readerName, new MessageToMessageDecoder() {
-            @Override
-            protected void decode(ChannelHandlerContext channelHandlerContext, Object packet, List list) throws Exception {
-                list.add(packet);
-                readPacket(player, (Packet<?>) packet);
-            }
-        });
     }
 
 }

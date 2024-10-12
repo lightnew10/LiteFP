@@ -1,10 +1,10 @@
 package fr.lightnew.npc.entities;
 
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import fr.lightnew.npc.entities.npc.AnimationNPC;
+import fr.lightnew.npc.entities.metas.AnimationNPC;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import net.minecraft.world.entity.Pose;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.json.JSONObject;
@@ -21,36 +21,47 @@ public class LFPLocation {
     private float yaw;
     private float pitch;
     private AnimationNPC animationNPC;
-    private EnumWrappers.EntityPose poseNPC;
+    private Pose poseNPC;
 
     public LFPLocation(String world, double x, double y, double z, float pitch, float yaw, AnimationNPC animationNPC) {
+        setDefaultValue(world, x, y, z, yaw, pitch);
+        this.animationNPC = animationNPC;
+    }
+
+    public LFPLocation(Location location) {
+        setDefaultValue(location);
+    }
+
+    public LFPLocation(Location location, AnimationNPC animationNPC) {
+        setDefaultValue(location);
+        this.animationNPC = animationNPC;
+    }
+
+    public LFPLocation(Location location, Pose pose) {
+        setDefaultValue(location);
+        this.poseNPC = pose;
+    }
+
+    private void setDefaultValue(String world, double x, double y, double z, float yaw, float pitch) {
         this.world = world;
         this.x = x;
         this.y = y;
         this.z = z;
         this.yaw = yaw;
         this.pitch = pitch;
-        this.animationNPC = animationNPC;
-    }
-
-    public LFPLocation(Location location) {
-        this.world = location.getWorld().getName();
-        this.x = location.getX();
-        this.y = location.getY();
-        this.z = location.getZ();
-        this.yaw = location.getYaw();
-        this.pitch = location.getPitch();
+        this.poseNPC = Pose.SITTING;
         this.animationNPC = null;
     }
 
-    public LFPLocation(Location location, AnimationNPC animationNPC) {
+    private void setDefaultValue(Location location) {
         this.world = location.getWorld().getName();
         this.x = location.getX();
         this.y = location.getY();
         this.z = location.getZ();
         this.yaw = location.getYaw();
         this.pitch = location.getPitch();
-        this.animationNPC = animationNPC;
+        this.poseNPC = Pose.SITTING;
+        this.animationNPC = null;
     }
 
     public Location getLocation() {
@@ -71,6 +82,8 @@ public class LFPLocation {
         json.put("pitch", pitch);
         if (animationNPC != null)
             json.put("animation", animationNPC.name());
+        if (poseNPC != null)
+            json.put("pose", poseNPC.name());
         return json;
     }
 
@@ -89,6 +102,8 @@ public class LFPLocation {
             this.pitch = json.getFloat("pitch");
         if (json.has("animation"))
             this.animationNPC = AnimationNPC.valueOf(json.getString("animation"));
+        if (json.has("pose"))
+            this.poseNPC = Pose.valueOf(json.getString("pose"));
         return this;
     }
 }

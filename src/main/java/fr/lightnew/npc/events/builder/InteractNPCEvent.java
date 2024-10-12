@@ -1,5 +1,6 @@
 package fr.lightnew.npc.events.builder;
 
+import fr.lightnew.npc.entities.npc.NPCClickType;
 import fr.lightnew.npc.entities.npc.NPCCreator;
 import lombok.Getter;
 import org.bukkit.entity.Player;
@@ -14,7 +15,7 @@ public class InteractNPCEvent extends Event implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
     private final Player player;
-    private final ClickType clickType;
+    private final NPCClickType clickType;
     private final NPCCreator npcManager;
     private boolean isCancelled;
 
@@ -24,7 +25,7 @@ public class InteractNPCEvent extends Event implements Cancellable {
         return handlers;
     }
 
-    public InteractNPCEvent(Player player, ClickType clickType, NPCCreator npcManager) {
+    public InteractNPCEvent(Player player, NPCClickType clickType, NPCCreator npcManager) {
         this.player = player;
         this.clickType = clickType;
         this.npcManager = npcManager;

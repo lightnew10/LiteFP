@@ -23,4 +23,8 @@ public class ConstructLFPLocation {
     public void addLocation(Location location) {
         locationList.add(new LFPLocation(location));
     }
+
+    public void addLocation(LFPLocation location) {
+        locationList.add(location);
+    }
 }

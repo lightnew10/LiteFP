@@ -1,7 +1,5 @@
 package fr.lightnew.npc;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
 import fr.lightnew.npc.commands.CommandNPC;
 import fr.lightnew.npc.commands.RecordCommand;
 import fr.lightnew.npc.entities.npc.NPCCreator;
@@ -10,6 +8,7 @@ import fr.lightnew.npc.sql.RequestNPC;
 import fr.lightnew.npc.tools.ConsoleLog;
 import fr.lightnew.npc.tools.WorkerLoadNPC;
 import lombok.Getter;
+import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -23,14 +22,13 @@ import java.util.Map;
 public final class LiteFP extends JavaPlugin {
 
     public static LiteFP instance;
-    public static Map<Integer, NPCCreator> list_npc;
-    public static Map<Integer, NPCCreator> list_waiting_update_npc;
+    public static Map<Integer, NPCCreator> list_npc = new HashMap<>();
+    public static Map<Integer, NPCCreator> list_waiting_update_npc = new HashMap<>();
     public static final Map<String, String[]> skinCache = new HashMap<>();
     @Getter
     private static Connection connection;
     public static WorkerLoadNPC workerLoadNPC;
-    @Getter
-    private ProtocolManager protocolManager;
+    public static HolographicDisplaysAPI holographicDisplaysAPI;
 
     @Override
     public void onLoad() {
@@ -38,14 +36,19 @@ public final class LiteFP extends JavaPlugin {
         saveDefaultConfig();
         createDataBase();
         connectSQL();
-        protocolManager = ProtocolLibrary.getProtocolManager();
     }
 
     @Override
     public void onEnable() {
+        if (!Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
+            ConsoleLog.error("*** HolographicDisplays is not installed or not enabled. ***");
+            ConsoleLog.error("*** This plugin will be disabled. ***");
+            this.setEnabled(false);
+            return;
+        }
+        holographicDisplaysAPI = HolographicDisplaysAPI.get(this);
         ConsoleLog.info("Plugin starting...");
         list_npc = RequestNPC.getAllNPC();
-        list_waiting_update_npc = new HashMap<>();
         workerLoadNPC = new WorkerLoadNPC();
         workerLoadNPC.runTaskTimerAsynchronously(this, 0, 10);
         updateWaitingList();
@@ -55,8 +58,9 @@ public final class LiteFP extends JavaPlugin {
         */
         getCommand("npc").setExecutor(new CommandNPC());
         getCommand("npc").setTabCompleter(new CommandNPC());
-        getCommand("record").setExecutor(new RecordCommand());
-        getCommand("record").setTabCompleter(new RecordCommand());
+        //Features add soon
+        //getCommand("record").setExecutor(new RecordCommand());
+        //getCommand("record").setTabCompleter(new RecordCommand());
 
         /*
         Listener Events
@@ -112,10 +116,10 @@ public final class LiteFP extends JavaPlugin {
 
     private void updateWaitingList() {
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
-            //ConsoleLog.info("Updating data...");
-            list_waiting_update_npc.values().forEach(RequestNPC::updateNPC);
-            list_waiting_update_npc.clear();
-            //ConsoleLog.success("NPC's updated");
+            if (!list_waiting_update_npc.isEmpty()) {
+                list_waiting_update_npc.values().forEach(RequestNPC::updateNPC);
+                list_waiting_update_npc.clear();
+            }
         }, 0, (20 * 30));
     }
 }
