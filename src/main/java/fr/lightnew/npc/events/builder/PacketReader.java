@@ -9,12 +9,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ServerboundChatSessionUpdatePacket;
-import net.minecraft.network.protocol.login.ClientLoginPacketListener;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.ClickType;
 
 import java.lang.reflect.Field;
 import java.util.*;

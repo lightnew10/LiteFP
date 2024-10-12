@@ -14,6 +14,18 @@
 <br>
 **In the future, adding new storage systems**
 
+## Maven
+https://github.com/lightnew10/LiteFP/packages/2277942
+<br>
+or
+```xml
+<dependency>
+    <groupId>fr.lightnew.npc</groupId>
+    <artifactId>litefp</artifactId>
+    <version>0.3.0</version>
+</dependency>
+```
+
 ## How to Interact with NPC ?
 
 ```java
@@ -96,12 +108,9 @@ public void onSpawn(PlayerSpawnInServerEvent event) {
 
 ## New features coming soon
 - Modify type of npc (Zombie, Villager, Allay...)
-<<<<<<< Updated upstream
 - Add action (execute command...)
 - recording system (to move the NPC infinitely to a specific location)
 - sort in gui all npc (sort by world, id, nearby...)
 - System lang custom (multi languages)
 - Design information and config
-=======
 - Add action (execute command...)
->>>>>>> Stashed changes

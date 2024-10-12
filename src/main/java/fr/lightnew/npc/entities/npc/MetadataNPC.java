@@ -13,7 +13,6 @@ import net.minecraft.world.entity.animal.FrogVariant;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.item.DyeColor;
-import org.bukkit.Location;
 
 @Data
 @NoArgsConstructor

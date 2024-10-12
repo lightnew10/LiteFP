@@ -1,7 +1,6 @@
 package fr.lightnew.npc;
 
 import fr.lightnew.npc.commands.CommandNPC;
-import fr.lightnew.npc.commands.RecordCommand;
 import fr.lightnew.npc.entities.npc.NPCCreator;
 import fr.lightnew.npc.events.PlayerManager;
 import fr.lightnew.npc.sql.RequestNPC;

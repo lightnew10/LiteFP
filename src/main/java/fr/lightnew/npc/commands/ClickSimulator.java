@@ -2,11 +2,8 @@ package fr.lightnew.npc.commands;
 
 import fr.lightnew.npc.LiteFP;
 import fr.lightnew.npc.entities.npc.NPCCreator;
-import fr.lightnew.npc.tools.ConsoleLog;
 import org.bukkit.Location;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.util.Vector;
 
 public class ClickSimulator {

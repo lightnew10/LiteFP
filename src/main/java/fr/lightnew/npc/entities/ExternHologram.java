@@ -8,7 +8,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
