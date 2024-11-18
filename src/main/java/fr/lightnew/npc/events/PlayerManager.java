@@ -7,6 +7,8 @@ import fr.lightnew.npc.entities.LFPLocation;
 import fr.lightnew.npc.entities.custom.EntityCreator;
 import fr.lightnew.npc.entities.npc.NPCCreator;
 import fr.lightnew.npc.events.builder.PacketReader;
+import fr.lightnew.npc.events.builder.PlayerNPCLoadEvent;
+import fr.lightnew.npc.events.builder.PlayerNPCUnLoadEvent;
 import fr.lightnew.npc.events.builder.PlayerSpawnInServerEvent;
 import fr.lightnew.npc.gui.GUINpcs;
 import io.netty.buffer.Unpooled;
@@ -97,10 +99,12 @@ public class PlayerManager implements Listener {
                         if (npc.getShowingNPCToPlayer().contains(playerUUID)) {
                             npc.remove(player);
                             npc.getShowingNPCToPlayer().remove(playerUUID);
+                            Bukkit.getPluginManager().callEvent(new PlayerNPCUnLoadEvent(player, npc));
                         }
                     } else if (!npc.getShowingNPCToPlayer().contains(playerUUID)) {
                         npc.spawnNPC(player);
                         npc.getShowingNPCToPlayer().add(playerUUID);
+                        Bukkit.getPluginManager().callEvent(new PlayerNPCLoadEvent(player, npc));
                     }
 
                     if (!npc.getEffects().getLookLock()) {

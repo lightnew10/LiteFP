@@ -93,9 +93,9 @@ public void createMyEntityCustom(String name, Location location) {
 ```
 
 ## New event PlayerSpawnInServerEvent
-PlayerSpawnInServerEvent is not the same as PlayerJoinEvent! 
+PlayerSpawnInServerEvent is not the same as PlayerJoinEvent!
 
-- PlayerJoinEvent corresponds to the arrival of a player on the server 
+- PlayerJoinEvent corresponds to the arrival of a player on the server
 
 - PlayerSpawnInServerEvent corresponds to the arrival of a player on the server physically when his corpse spawns on the server.
 ```java
@@ -103,6 +103,20 @@ PlayerSpawnInServerEvent is not the same as PlayerJoinEvent!
 public void onSpawn(PlayerSpawnInServerEvent event) {
     //You have only event.getPlayer();
     event.getPlayer();
+}
+```
+
+## New event Player Load NPC & Player UnLoad NPC
+This event is created to perform an action if the player loads or unloads an NPC.
+<br>
+Very simple to use!
+```java
+@EventHandler
+public void onLoad(PlayerNPCLoadEvent or PlayerNPCUnLoadEvent event) {
+    //Player Loaded npc
+    event.getPlayer();
+    //All details of NPC
+    event.getNpc();
 }
 ```
 
